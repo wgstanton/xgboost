@@ -173,14 +173,6 @@ struct WQSummary {
       }
     }
   }
-  /*! \brief used for debug purpose, print the summary */
-  inline void Print(void) const {
-    for (size_t i = 0; i < size; ++i) {
-      std::cout << "x=" << data[i].value << "\t"
-                << "[" << data[i].rmin << "," << data[i].rmax << "]"
-                << " wmin=" << data[i].wmin << std::endl;
-    }
-  }
   /*!
    * \brief set current summary to be pruned summary of src
    *        assume data field is already allocated to be at least maxsize
@@ -278,7 +270,27 @@ struct WQSummary {
     this->size = dst - data;
     utils::Assert(size <= sa.size + sb.size, "bug in combine");
   }
+  // helper function to print the current content of sketch
+  inline void Print() const {
+    for (size_t i = 0; i < this->size; ++i) {
+      utils::Printf("[%lu] rmin=%g, rmax=%g, wmin=%g, v=%g\n",
+                    i, data[i].rmin, data[i].rmax,
+                    data[i].wmin, data[i].value);
+    }
+  }
+  // check consistency of the summary
+  inline void Check(const char *msg) const {
+    for (size_t i = 0; i < this->size; ++i) {
+      if (data[i].rmin + data[i].wmin + 10.0f > data[i].wmax||
+          data[i].rmin < -1e-6f || data[i].rmax < -1e-6f) {
+        utils::Printf("----%s: Check not Pass------\n", msg);
+        this->Print();
+        utils::Error("----Sketch check fail------\n");
+      }
+    }
+  }
 };
+
 /*! \brief try to do efficient prunning */
 template<typename DType, typename RType>
 struct WXQSummary : public WQSummary<DType, RType> {
@@ -334,11 +346,7 @@ struct WXQSummary : public WQSummary<DType, RType> {
       utils::Printf("LOG: srcsize=%lu, maxsize=%lu, range=%g, chunk=%g\n",
                     src.size, maxsize, static_cast<double>(range),
                     static_cast<double>(chunk));
-      for (size_t i = 0; i < src.size; ++i) {
-        utils::Printf("[%lu] rmin=%g, rmax=%g, wmin=%g, v=%g, isbig=%d\n", i,
-                      src.data[i].rmin, src.data[i].rmax,  src.data[i].wmin,
-                      src.data[i].value, CheckLarge(src.data[i], chunk));
-      }
+      src.Print();
       utils::Assert(nbig < n - 1, "quantile: too many large chunk");
     }
     this->data[0] = src.data[0];
@@ -483,6 +491,8 @@ struct GKSummary {
   }
   inline void SetCombine(const GKSummary &sa,
                          const GKSummary &sb) {
+    sa.Check("BeforeCombine A");
+    sb.Check("BeforeCombine B");
     if (sa.size == 0) {
       this->CopyFrom(sb); return;
     }
@@ -523,6 +533,7 @@ struct GKSummary {
       } while (b != b_end);
     }
     utils::Assert(dst == data + size, "bug in combine");
+    this->Check("AfterCombine");
   }
 };
 

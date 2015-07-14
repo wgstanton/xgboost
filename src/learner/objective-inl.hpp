@@ -121,12 +121,16 @@ class RegLossObj : public IObjFunction {
   explicit RegLossObj(int loss_type) {
     loss.loss_type = loss_type;
     scale_pos_weight = 1.0f;
+    min_hess_value = 0.0f;
   }
   virtual ~RegLossObj(void) {}
   virtual void SetParam(const char *name, const char *val) {
     using namespace std;
     if (!strcmp("scale_pos_weight", name)) {
       scale_pos_weight = static_cast<float>(atof(val));
+    }
+    if (!strcmp("min_hess_value", name)) {
+      min_hess_value = static_cast<float>(atof(val));
     }
   }
   virtual void GetGradient(const std::vector<float> &preds,
@@ -152,6 +156,9 @@ class RegLossObj : public IObjFunction {
       if (!loss.CheckLabel(info.labels[j])) label_correct = false;
       gpair[i] = bst_gpair(loss.FirstOrderGradient(p, info.labels[j]) * w,
                            loss.SecondOrderGradient(p, info.labels[j]) * w);
+      if (min_hess_value != 0.0f) {
+        gpair[i].hess = std::max(min_hess_value, gpair[i].hess);
+      }
     }
     utils::Check(label_correct, loss.CheckLabelErrorMsg());
   }
@@ -172,6 +179,7 @@ class RegLossObj : public IObjFunction {
 
  protected:
   float scale_pos_weight;
+  float min_hess_value;
   LossType loss;
 };
 
