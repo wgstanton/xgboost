@@ -713,7 +713,7 @@ class QuantileHistMaker: public HistMaker<TStats> {
     for (size_t i = 0; i < sketchs.size(); ++i) {
       utils::WQuantileSketch<bst_float, bst_float>::SummaryContainer out;
       sketchs[i].GetSummary(&out);
-      out.Check("Sketch Get");
+      utils::Check(out.Check("Sketch Get"), "Sketch[%d] error\n", static_cast<int>(i));
       summary_array[i].Reserve(max_size);
       summary_array[i].SetPrune(out, max_size);
     }

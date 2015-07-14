@@ -279,15 +279,17 @@ struct WQSummary {
     }
   }
   // check consistency of the summary
-  inline void Check(const char *msg) const {
+  inline bool Check(const char *msg) const {
+    const float tol = 10.0f;
     for (size_t i = 0; i < this->size; ++i) {
-      if (data[i].rmin + data[i].wmin + 10.0f > data[i].wmax||
+      if (data[i].rmin + data[i].wmin + tol > data[i].wmax ||
           data[i].rmin < -1e-6f || data[i].rmax < -1e-6f) {
         utils::Printf("----%s: Check not Pass------\n", msg);
         this->Print();
-        utils::Error("----Sketch check fail------\n");
+        return false;
       }
     }
+    return true;
   }
 };
 
@@ -491,8 +493,8 @@ struct GKSummary {
   }
   inline void SetCombine(const GKSummary &sa,
                          const GKSummary &sb) {
-    sa.Check("BeforeCombine A");
-    sb.Check("BeforeCombine B");
+    utils::Check(sa.Check("BeforeCombine A"), "Check Left error");
+    utils::Check(sb.Check("BeforeCombine B"), "Check right error");
     if (sa.size == 0) {
       this->CopyFrom(sb); return;
     }
@@ -533,7 +535,13 @@ struct GKSummary {
       } while (b != b_end);
     }
     utils::Assert(dst == data + size, "bug in combine");
-    this->Check("AfterCombine");
+    if (!this->Chck("AfterCombine")) {
+      utils::Printf("-----Left-----\n");
+      sa.Print();
+      utils::Printf("-----Right-----\n");
+      sb.Print();
+      this->Error("Error after combine\n");
+    }
   }
 };
 

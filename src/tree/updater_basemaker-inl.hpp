@@ -394,7 +394,6 @@ class BaseMaker: public IUpdater {
         ++sketch->temp.size;
       }
       sketch->PushTemp();
-
     }
   };
   /*! \brief training parameter of tree grower */
