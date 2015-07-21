@@ -291,7 +291,7 @@ struct WQSummary {
   inline bool Check(const char *msg) const {
     const float tol = 10.0f;
     for (size_t i = 0; i < this->size; ++i) {
-      if (data[i].rmin + data[i].wmin + tol > data[i].rmax ||
+      if (data[i].rmin + data[i].wmin > data[i].rmax + tol ||
           data[i].rmin < -1e-6f || data[i].rmax < -1e-6f) {
         utils::Printf("----%s: Check not Pass------\n", msg);
         this->Print();
