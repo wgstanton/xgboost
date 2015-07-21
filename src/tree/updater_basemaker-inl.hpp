@@ -393,6 +393,7 @@ class BaseMaker: public IUpdater {
                   static_cast<bst_float>(wmin), last_fvalue);
         ++sketch->temp.size;
       }
+      utils::Check(sketch->temp.Check("Finalize"), "Sketch error\n");
       sketch->PushTemp();
     }
   };

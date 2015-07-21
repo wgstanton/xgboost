@@ -424,6 +424,7 @@ class CQHistMaker: public HistMaker<TStats> {
       for (size_t i = 0; i < sketchs.size(); ++i) {
         utils::WXQuantileSketch<bst_float, bst_float>::SummaryContainer out;
         sketchs[i].GetSummary(&out);
+        utils::Check(out.Check("Sketch Get"), "Sketch[%d] error\n", static_cast<int>(i));
         summary_array[i].SetPrune(out, max_size);
       }
       utils::Assert(summary_array.size() == sketchs.size(), "shape mismatch");
@@ -713,9 +714,9 @@ class QuantileHistMaker: public HistMaker<TStats> {
     for (size_t i = 0; i < sketchs.size(); ++i) {
       utils::WQuantileSketch<bst_float, bst_float>::SummaryContainer out;
       sketchs[i].GetSummary(&out);
-      utils::Check(out.Check("Sketch Get"), "Sketch[%d] error\n", static_cast<int>(i));
       summary_array[i].Reserve(max_size);
       summary_array[i].SetPrune(out, max_size);
+      // ADD print here
     }
 
     size_t nbytes = WXQSketch::SummaryContainer::CalcMemCost(max_size);

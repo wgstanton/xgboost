@@ -316,10 +316,10 @@ struct WXQSummary : public WQSummary<DType, RType> {
   }
   // set prune
   inline void SetPrune(const WQSummary<DType, RType> &src, size_t maxsize) {
+    utils::Check(src.Check("BeforePrune"), "Check src error");
     if (src.size <= maxsize) {
       this->CopyFrom(src); return;
     }
-    utils::Check(src.Check("BeforePrune"), "Check src error");
     RType begin = src.data[0].rmax;
     size_t n = maxsize - 1, nbig = 0;
     RType range = src.data[src.size - 1].rmin - begin;
@@ -608,11 +608,14 @@ class QuantileSketchTemplate {
      * \param max_nbyte, maximum number of byte allowed in here
      */
     inline void Reduce(const Summary &src, size_t max_nbyte) {
+      utils::Check(this->Check("BeforeReduce this"), "Check reduce");
+      utils::Check(src.Check("BeforeReduce src"), "Check src");
       this->Reserve((max_nbyte - sizeof(this->size)) / sizeof(Entry));
       SummaryContainer temp;
       temp.Reserve(this->size + src.size);
       temp.SetCombine(*this, src);
       this->SetPrune(temp, space.size());
+      utils::Check(this->Check("AfterReduce"), "Check reduce");
     }
     /*! \brief return the number of bytes this data structure cost in serialization */
     inline static size_t CalcMemCost(size_t nentry) {
