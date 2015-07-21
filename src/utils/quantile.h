@@ -218,6 +218,8 @@ struct WQSummary {
    */
   inline void SetCombine(const WQSummary &sa,
                          const WQSummary &sb) {
+    utils::Check(sa.Check("BeforeCombine A"), "Check Left error");
+    utils::Check(sb.Check("BeforeCombine B"), "Check right error");
     if (sa.size == 0) {
       this->CopyFrom(sb); return;
     }
@@ -268,6 +270,13 @@ struct WQSummary {
       } while (b != b_end);
     }
     this->size = dst - data;
+    if (!this->Check("AfterCombine")) {
+      utils::Printf("-----Left-----\n");
+      sa.Print();
+      utils::Printf("-----Right-----\n");
+      sb.Print();
+      utils::Error("Error after combine\n");
+    }
     utils::Assert(size <= sa.size + sb.size, "bug in combine");
   }
   // helper function to print the current content of sketch
@@ -282,7 +291,7 @@ struct WQSummary {
   inline bool Check(const char *msg) const {
     const float tol = 10.0f;
     for (size_t i = 0; i < this->size; ++i) {
-      if (data[i].rmin + data[i].wmin + tol > data[i].wmax ||
+      if (data[i].rmin + data[i].wmin + tol > data[i].rmax ||
           data[i].rmin < -1e-6f || data[i].rmax < -1e-6f) {
         utils::Printf("----%s: Check not Pass------\n", msg);
         this->Print();
@@ -310,6 +319,7 @@ struct WXQSummary : public WQSummary<DType, RType> {
     if (src.size <= maxsize) {
       this->CopyFrom(src); return;
     }
+    utils::Check(src.Check("BeforePrune"), "Check src error");
     RType begin = src.data[0].rmax;
     size_t n = maxsize - 1, nbig = 0;
     RType range = src.data[src.size - 1].rmin - begin;
@@ -387,6 +397,7 @@ struct WXQSummary : public WQSummary<DType, RType> {
         begin += src.data[bid].rmin_next() - src.data[bid].rmax_prev();
       }
     }
+    utils::Check(this->Check("AfterPrune"), "Check result error");
   }
 };
 /*!
@@ -493,8 +504,6 @@ struct GKSummary {
   }
   inline void SetCombine(const GKSummary &sa,
                          const GKSummary &sb) {
-    utils::Check(sa.Check("BeforeCombine A"), "Check Left error");
-    utils::Check(sb.Check("BeforeCombine B"), "Check right error");
     if (sa.size == 0) {
       this->CopyFrom(sb); return;
     }
@@ -535,13 +544,6 @@ struct GKSummary {
       } while (b != b_end);
     }
     utils::Assert(dst == data + size, "bug in combine");
-    if (!this->Chck("AfterCombine")) {
-      utils::Printf("-----Left-----\n");
-      sa.Print();
-      utils::Printf("-----Right-----\n");
-      sb.Print();
-      this->Error("Error after combine\n");
-    }
   }
 };
 
@@ -619,6 +621,7 @@ class QuantileSketchTemplate {
     /*! \brief save the data structure into stream */
     template<typename TStream>
     inline void Save(TStream &fo) const {  // NOLINT(*)
+      utils::Check(this->Check("BeforeSave"), "Check save error");
       fo.Write(&(this->size), sizeof(this->size));
       if (this->size != 0) {
         fo.Write(this->data, this->size * sizeof(Entry));
@@ -633,6 +636,7 @@ class QuantileSketchTemplate {
         utils::Check(fi.Read(this->data, this->size * sizeof(Entry)) != 0,
                      "invalid SummaryArray 2");
       }
+      utils::Check(this->Check("AfterLoad"), "Check load error");
     }
   };
   /*!
