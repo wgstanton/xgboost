@@ -311,12 +311,12 @@ struct WQSummary {
       } else {
         prev_rmin = data[i].rmin;
       }
-      if (prev_rmax > data[i].rmax) {
+      if (data[i].rmax < prev_rmax) {
         data[i].rmax = prev_rmax;
         *err_maxgap = std::max(*err_maxgap, prev_rmax - data[i].rmax);
       }
       RType rmin_next = data[i].rmin_next();
-      if (rmin_next > data[i].rmax) {
+      if (data[i].rmax < rmin_next) {
         data[i].rmax = rmin_next;
         *err_wgap = std::max(*err_wgap, data[i].rmax - rmin_next);
       }
